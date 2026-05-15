@@ -15,6 +15,7 @@ class TreeNode:
     full_path: str     # absolute path
     is_dir: bool
     size: int = 0
+    mtime: float = 0.0        # modification timestamp
     children: list["TreeNode"] = field(default_factory=list)
     checked: bool = True       # all files default checked
     partial: bool = False      # some (not all) children checked
@@ -33,6 +34,7 @@ def scan_directory(root_dir: str | None = None) -> list[TreeNode]:
 
     root = Path(root_dir).resolve()
     exe_path = _get_exe_path()
+    skip_paths = _get_skip_paths(exe_path)
 
     def _scan(current: Path) -> list[TreeNode]:
         nodes: list[TreeNode] = []
@@ -45,8 +47,16 @@ def scan_directory(root_dir: str | None = None) -> list[TreeNode]:
             return nodes
 
         for entry in entries:
-            if _should_skip(entry, exe_path):
+            if _should_skip(entry, skip_paths):
                 continue
+
+            try:
+                st = entry.stat()
+                mtime = st.st_mtime
+                fsize = st.st_size if not entry.is_dir() else 0
+            except (PermissionError, OSError):
+                mtime = 0.0
+                fsize = 0
 
             rel_path = str(entry.relative_to(root))
             node = TreeNode(
@@ -54,19 +64,18 @@ def scan_directory(root_dir: str | None = None) -> list[TreeNode]:
                 path=rel_path,
                 full_path=str(entry),
                 is_dir=entry.is_dir(),
+                mtime=mtime,
             )
 
             if entry.is_dir():
                 node.children = _scan(entry)
                 node.size = sum(c.size for c in node.children)
+                node.mtime = max((c.mtime for c in node.children), default=mtime)
                 _sync_dir_state(node)
             elif entry.is_symlink():
                 continue
             else:
-                try:
-                    node.size = entry.stat().st_size
-                except (PermissionError, OSError):
-                    node.error = "无法读取"
+                node.size = fsize
 
             nodes.append(node)
 
@@ -82,9 +91,37 @@ def _get_exe_path() -> str | None:
     return None
 
 
-def _should_skip(entry: Path, exe_path: str | None) -> bool:
-    """Check if a file should be excluded from the tree."""
-    if exe_path and str(entry.resolve()) == exe_path:
+def _get_skip_paths(exe_path: str | None) -> set[str]:
+    """Collect paths to exclude from the tree (the app itself and its data)."""
+    paths: set[str] = set()
+    if exe_path is None:
+        return paths
+
+    paths.add(exe_path)
+
+    # On macOS .app bundle, exclude the bundle and the PyInstaller data dir
+    app_dir = _find_app_bundle_dir(exe_path)
+    if app_dir:
+        paths.add(app_dir)
+        data_dir = os.path.join(os.path.dirname(app_dir), os.path.basename(app_dir).removesuffix(".app"))
+        if os.path.isdir(data_dir):
+            paths.add(data_dir)
+
+    return paths
+
+
+def _find_app_bundle_dir(exe_path: str) -> str | None:
+    """If exe_path is inside a macOS .app bundle, return the .app directory."""
+    path = exe_path
+    while path != os.path.dirname(path):
+        if os.path.basename(path).endswith(".app") and os.path.isdir(path):
+            return path
+        path = os.path.dirname(path)
+    return None
+
+
+def _should_skip(entry: Path, skip_paths: set[str]) -> bool:
+    if str(entry.resolve()) in skip_paths:
         return True
     if entry.name in {'.DS_Store', 'Thumbs.db'}:
         return True

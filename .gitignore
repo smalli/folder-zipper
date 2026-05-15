@@ -5,3 +5,5 @@ dist/
 *.pyc
 .DS_Store
 Thumbs.db
+.claude/
+.spec-workflow/

@@ -1,4 +1,4 @@
-"""Build script — produces a single-file executable via PyInstaller.
+"""Build script — produces a distributable app via PyInstaller.
 
 Usage:
     python build.py           # build for current platform
@@ -8,8 +8,9 @@ Prerequisites:
     pip install pyinstaller
 
 Output:
-    dist/folder-zipper       (macOS / Linux)
-    dist/folder-zipper.exe   (Windows)
+    dist/folder-zipper.app    (macOS)
+    dist/folder-zipper.exe    (Windows)
+    dist/folder-zipper        (Linux)
 """
 
 import os
@@ -41,12 +42,18 @@ def clean():
 
 def build():
     system = platform.system()
-    ext = ".exe" if system == "Windows" else ""
-    output_name = NAME + ext
+    is_mac = system == "Darwin"
+
+    if is_mac:
+        mode = "--onedir"
+        output_name = NAME + ".app"
+    else:
+        mode = "--onefile"
+        output_name = NAME + (".exe" if system == "Windows" else "")
 
     cmd = [
         sys.executable, "-m", "PyInstaller",
-        "--onefile",
+        mode,
         "--windowed",
         "--name", NAME,
         "--clean",
@@ -65,8 +72,7 @@ def build():
 
     dist_path = os.path.join(PROJECT_DIR, "dist", output_name)
     if os.path.exists(dist_path):
-        size_mb = os.path.getsize(dist_path) / (1024 * 1024)
-        print(f"\n[build] Done! -> {dist_path} ({size_mb:.1f} MB)")
+        print(f"\n[build] Done! -> {dist_path}")
     else:
         print(f"\n[build] Done! Check dist/ directory.")
 

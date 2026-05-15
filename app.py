@@ -25,8 +25,14 @@ class ZipPackerApp:
         self.root_dir = root_dir or os.path.dirname(os.path.abspath(sys.argv[0]))
         self.root = tk.Tk()
         self.root.title("Folder Zipper")
-        self.root.geometry("740x560")
-        self.root.minsize(480, 360)
+        self.root.geometry("1024x680")
+        self.root.minsize(640, 440)
+
+        style = ttk.Style()
+        style.configure("Treeview", font=("", 11))
+        style.configure("Treeview.Heading", font=("", 11))
+        style.configure("TButton", font=("", 10))
+        style.configure("TLabel", font=("", 10))
 
         self._build_ui()
         self._load_tree()
@@ -160,13 +166,9 @@ class ZipPackerApp:
         output_name = self.output_var.get().strip()
         if not output_name:
             output_name = os.path.basename(self.root_dir.rstrip("/\\")) or "archive"
-        default_dir = os.path.expanduser("~/Desktop")
-        if not os.path.isdir(default_dir):
-            default_dir = self.root_dir
-
         path = filedialog.asksaveasfilename(
             title="保存 ZIP 文件",
-            initialdir=default_dir,
+            initialdir=self.root_dir,
             initialfile=f"{output_name}.zip",
             defaultextension=".zip",
             filetypes=[("ZIP 文件", "*.zip")],
@@ -184,13 +186,9 @@ class ZipPackerApp:
         if not output_name:
             output_name = os.path.basename(self.root_dir.rstrip("/\\")) or "archive"
 
-        default_dir = os.path.expanduser("~/Desktop")
-        if not os.path.isdir(default_dir):
-            default_dir = self.root_dir
-
         output_path = filedialog.asksaveasfilename(
             title="保存 ZIP 文件",
-            initialdir=default_dir,
+            initialdir=self.root_dir,
             initialfile=f"{output_name}.zip",
             defaultextension=".zip",
             filetypes=[("ZIP 文件", "*.zip")],

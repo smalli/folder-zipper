@@ -14,10 +14,16 @@ import sys
 def main():
     from app import ZipPackerApp
 
-    # Determine the root directory to scan
     if getattr(sys, 'frozen', False):
-        # Running as PyInstaller bundle → scan the exe's folder
-        root_dir = os.path.dirname(os.path.abspath(sys.executable))
+        exe_path = os.path.abspath(sys.executable)
+        # macOS .app bundle: exe lives inside .app/Contents/MacOS/, use the
+        # directory that contains the .app bundle so the user can place it
+        # alongside files they want to package.
+        app_dir = _find_app_bundle_dir(exe_path)
+        if app_dir:
+            root_dir = os.path.dirname(app_dir)
+        else:
+            root_dir = os.path.dirname(exe_path)
     elif len(sys.argv) > 1 and os.path.isdir(sys.argv[1]):
         root_dir = sys.argv[1]
     else:
@@ -25,6 +31,16 @@ def main():
 
     app = ZipPackerApp(root_dir)
     app.run()
+
+
+def _find_app_bundle_dir(exe_path: str) -> str | None:
+    """If exe_path is inside a macOS .app bundle, return the .app directory."""
+    path = exe_path
+    while path != os.path.dirname(path):
+        if os.path.basename(path).endswith(".app") and os.path.isdir(path):
+            return path
+        path = os.path.dirname(path)
+    return None
 
 
 if __name__ == "__main__":

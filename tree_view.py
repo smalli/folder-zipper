@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import datetime
 import tkinter as tk
 from tkinter import ttk
 from typing import Callable
@@ -24,7 +25,7 @@ class CheckboxTreeview(ttk.Treeview):
     ):
         super().__init__(
             parent,
-            columns=("size",),
+            columns=("size", "mtime"),
             show="tree headings",
             selectmode="browse",
             **kwargs,
@@ -32,8 +33,10 @@ class CheckboxTreeview(ttk.Treeview):
 
         self.heading("#0", text="名称")
         self.heading("size", text="大小")
-        self.column("#0", width=400, minwidth=200, stretch=True)
-        self.column("size", width=120, minwidth=80, stretch=False, anchor="e")
+        self.heading("mtime", text="修改时间")
+        self.column("#0", width=480, minwidth=200, stretch=True)
+        self.column("size", width=110, minwidth=80, stretch=False, anchor="e")
+        self.column("mtime", width=140, minwidth=100, stretch=False)
 
         self._node_map: dict[str, TreeNode] = {}
         self._on_check_changed = on_check_changed
@@ -58,7 +61,7 @@ class CheckboxTreeview(ttk.Treeview):
                 parent_iid,
                 "end",
                 text=self._format_label(node),
-                values=(self._format_size(node),),
+                values=(self._format_size(node), self._format_mtime(node)),
                 open=False,
                 tags=self._get_tags(node),
             )
@@ -82,6 +85,11 @@ class CheckboxTreeview(ttk.Treeview):
             return "(空)"
         return _human_size(node.size)
 
+    def _format_mtime(self, node: TreeNode) -> str:
+        if node.error or node.mtime == 0.0:
+            return ""
+        return datetime.datetime.fromtimestamp(node.mtime).strftime("%Y-%m-%d %H:%M")
+
     def _get_tags(self, node: TreeNode) -> tuple[str, ...]:
         if node.error:
             return ("error",)
@@ -95,7 +103,7 @@ class CheckboxTreeview(ttk.Treeview):
             self.item(
                 iid,
                 text=self._format_label(node),
-                values=(self._format_size(node),),
+                values=(self._format_size(node), self._format_mtime(node)),
                 tags=self._get_tags(node),
             )
 
