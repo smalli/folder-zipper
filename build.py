@@ -66,7 +66,7 @@ def build():
     dist_path = os.path.join(PROJECT_DIR, "dist", output_name)
     if os.path.exists(dist_path):
         size_mb = os.path.getsize(dist_path) / (1024 * 1024)
-        print(f"\n[build] Done! → {dist_path} ({size_mb:.1f} MB)")
+        print(f"\n[build] Done! -> {dist_path} ({size_mb:.1f} MB)")
     else:
         print(f"\n[build] Done! Check dist/ directory.")
 
