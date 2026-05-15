@@ -21,17 +21,40 @@ from zipper import create_zip
 
 
 def _read_version() -> str:
-    # In frozen mode, VERSION is bundled alongside the executable
+    search_dirs = []
+
     if getattr(sys, 'frozen', False):
-        base = os.path.dirname(os.path.abspath(sys.executable))
+        exe = os.path.abspath(sys.executable)
+        # --onefile (Win/Linux): data files extracted to sys._MEIPASS
+        mp = getattr(sys, '_MEIPASS', '')
+        if mp:
+            search_dirs.append(mp)
+        # macOS .app bundle: data files in Contents/Resources/
+        app = _find_app_bundle(exe)
+        if app:
+            search_dirs.append(os.path.join(app, "Contents", "Resources"))
+        # fallback: alongside the executable (--onedir flat)
+        search_dirs.append(os.path.dirname(exe))
     else:
-        base = os.path.dirname(os.path.abspath(__file__))
-    p = os.path.join(base, "VERSION")
-    try:
-        with open(p) as f:
-            return f.read().strip()
-    except (FileNotFoundError, OSError):
-        return "dev"
+        search_dirs.append(os.path.dirname(os.path.abspath(__file__)))
+
+    for base in search_dirs:
+        p = os.path.join(base, "VERSION")
+        try:
+            with open(p) as f:
+                return f.read().strip()
+        except (FileNotFoundError, OSError):
+            continue
+    return "dev"
+
+
+def _find_app_bundle(exe_path: str) -> str | None:
+    path = exe_path
+    while path != os.path.dirname(path):
+        if os.path.basename(path).endswith(".app") and os.path.isdir(path):
+            return path
+        path = os.path.dirname(path)
+    return None
 
 
 VERSION = _read_version()
