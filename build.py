@@ -40,7 +40,36 @@ def clean():
                 shutil.rmtree(os.path.join(root, d))
 
 
+def _validate_version():
+    version_file = os.path.join(PROJECT_DIR, "VERSION")
+    try:
+        with open(version_file) as f:
+            file_ver = f.read().strip()
+    except (FileNotFoundError, OSError):
+        print("[build] WARNING: VERSION file not found, skipping version check.")
+        return
+
+    try:
+        tag = subprocess.check_output(
+            ["git", "describe", "--tags", "--exact-match", "HEAD"],
+            cwd=PROJECT_DIR, stderr=subprocess.DEVNULL,
+        ).decode().strip()
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        print(f"[build] WARNING: No tag on HEAD (VERSION={file_ver}), dev build.")
+        return
+
+    tag_ver = tag.lstrip("v")
+    if tag_ver != file_ver:
+        print(f"[build] ERROR: VERSION file ({file_ver}) does not match git tag ({tag}).")
+        print("[build] Update the VERSION file before building, or tag the commit with the correct version.")
+        sys.exit(1)
+
+    print(f"[build] Version check: VERSION={file_ver}, tag={tag}  OK")
+
+
 def build():
+    _validate_version()
+
     system = platform.system()
     is_mac = system == "Darwin"
 
