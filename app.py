@@ -19,12 +19,14 @@ from scanner import (
 from tree_view import CheckboxTreeview
 from zipper import create_zip
 
+VERSION = "1.1.1"
+
 
 class ZipPackerApp:
     def __init__(self, root_dir: str | None = None):
         self.root_dir = root_dir or os.path.dirname(os.path.abspath(sys.argv[0]))
         self.root = tk.Tk()
-        self.root.title("Folder Zipper")
+        self.root.title(f"Folder Zipper v{VERSION}")
         self.root.geometry("1024x680")
         self.root.minsize(640, 440)
 
