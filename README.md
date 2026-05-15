@@ -34,13 +34,26 @@ python3 main.py
 
 # 构建
 pip install pyinstaller
-python3 build.py
+python3 build.py         # macOS → .app, Windows → .exe, Linux → 二进制
 
 # 清理
 python3 build.py clean
 ```
 
-Python 3.9+，仅用标准库，无第三方依赖。
+Python 3.9+，仅用标准库，无第三方依赖。macOS 需用 Homebrew Python（系统自带 tkinter 8.5 不兼容 macOS 26）。
+
+## 发版
+
+VERSION 文件与 git tag 必须一致，构建脚本会自动校验：
+
+```bash
+echo "1.3.0" > VERSION
+git add VERSION
+git commit -m "release v1.3.0"
+git tag v1.3.0
+git push origin main
+git push origin v1.3.0   # 推送 tag 触发 CI 构建三平台产物
+```
 
 ## 功能
 
