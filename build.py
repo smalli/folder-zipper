@@ -51,12 +51,16 @@ def build():
         mode = "--onefile"
         output_name = NAME + (".exe" if system == "Windows" else "")
 
+    sep = ";" if system == "Windows" else ":"
+    version_file = os.path.join(PROJECT_DIR, "VERSION")
+
     cmd = [
         sys.executable, "-m", "PyInstaller",
         mode,
         "--windowed",
         "--name", NAME,
         "--clean",
+        "--add-data", f"{version_file}{sep}.",
         os.path.join(PROJECT_DIR, "main.py"),
     ]
 

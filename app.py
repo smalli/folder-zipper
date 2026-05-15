@@ -19,7 +19,22 @@ from scanner import (
 from tree_view import CheckboxTreeview
 from zipper import create_zip
 
-VERSION = "1.1.1"
+
+def _read_version() -> str:
+    # In frozen mode, VERSION is bundled alongside the executable
+    if getattr(sys, 'frozen', False):
+        base = os.path.dirname(os.path.abspath(sys.executable))
+    else:
+        base = os.path.dirname(os.path.abspath(__file__))
+    p = os.path.join(base, "VERSION")
+    try:
+        with open(p) as f:
+            return f.read().strip()
+    except (FileNotFoundError, OSError):
+        return "dev"
+
+
+VERSION = _read_version()
 
 
 class ZipPackerApp:
