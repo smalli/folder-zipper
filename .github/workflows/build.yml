@@ -1,0 +1,39 @@
+name: Build
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            artifact: folder-zipper.exe
+          - os: macos-latest
+            artifact: folder-zipper
+          - os: ubuntu-latest
+            artifact: folder-zipper
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install PyInstaller
+        run: pip install pyinstaller
+
+      - name: Build
+        run: python build.py
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: folder-zipper-${{ runner.os }}-${{ runner.arch }}
+          path: dist/${{ matrix.artifact }}
